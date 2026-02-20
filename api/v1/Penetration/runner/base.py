@@ -1,4 +1,3 @@
-import os
 import json
 import subprocess
 from datetime import datetime
@@ -64,24 +63,29 @@ class BaseRunner:
         self.write_log("system", f"产物已落盘: {filename}")
 
     def run_tool(self, cmd: list, stage_name: str, timeout: int = 3600) -> Optional[str]:
-        """封装工具执行，解决 Windows 编码与超时控制"""
         self.write_log(stage_name, f"执行命令: {' '.join(cmd)}")
         try:
-            # 显式指定 utf-8 编码，防止 Windows 默认 gbk 报错
+            # 关键修复：
+            # 1. stdin=subprocess.DEVNULL 防止工具等待键盘输入
+            # 2. 显式指定 encoding 和 errors 解决 Windows 编码崩溃
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
                 timeout=timeout,
                 encoding="utf-8",
-                errors="ignore"
+                errors="ignore",
+                stdin=subprocess.DEVNULL
             )
-            if result.stdout: self.write_log(stage_name, f"STDOUT: {result.stdout}")
-            if result.stderr: self.write_log(stage_name, f"STDERR: {result.stderr}")
+
+            if result.stdout:
+                self.write_log(stage_name, f"STDOUT 长度: {len(result.stdout)}")
             return result.stdout
-        except subprocess.TimeoutExpired:
-            self.write_log(stage_name, "错误: 工具执行超时")
-            return None
+
+        except subprocess.TimeoutExpired as e:
+            # 超时也要记录已有的输出，防止完全卡死
+            self.write_log(stage_name, "错误: 执行超时")
+            return e.stdout.decode(errors="ignore") if e.stdout else None
         except Exception as e:
             self.write_log(stage_name, f"异常: {str(e)}")
             return None
