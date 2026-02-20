@@ -1,11 +1,27 @@
 [project]
-name = "tools"
+name = "autoattack-tools"
 version = "0.1.0"
-description = "Add your description here"
+description = "自动化渗透测试工具集"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.129.0",
     "fastapi-cdn-host>=0.10.0",
     "uvicorn>=0.41.0",
+    "pydantic>=2.12.5",
 ]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["api*"]
+
+[project.scripts]
+autoattack-tools = "app:app"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/autoattack-tools"
+Repository = "https://github.com/yourusername/autoattack-tools"
