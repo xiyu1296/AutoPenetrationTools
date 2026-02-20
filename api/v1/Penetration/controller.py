@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any
 import io
 import zipfile
 
+from .runner.nmap import NmapRunner
 from .schema import (
     TaskCreateRequest, TaskRunRequest,
     TaskApproveRequest, Budget
@@ -112,15 +113,21 @@ def download(
 
 
 # 可选的其他端点
+
 @penetrationRouter.post("/scan/nmap")
 def scan_nmap(
-        payload: Dict[str, Any],
+        task_id: str,
+        target: str,
         x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
 ):
-    """模拟nmap扫描"""
+    """手动触发 Nmap 扫描并生成资产证据"""
     require_key(x_api_key)
-    return {"ok": True, "message": "scan done (mock)"}
 
+    # 实例化并直接执行
+    runner = NmapRunner(task_id)
+    result = runner.scan(target)
+
+    return {"ok": True, "data": result}
 
 @penetrationRouter.post("/verify/controlled")
 def verify_controlled(

@@ -1,4 +1,3 @@
-# api/v1/Penetration/runner/base.py
 import os
 import json
 import subprocess
@@ -8,6 +7,10 @@ from typing import Optional, Dict, Any
 
 
 class BaseRunner:
+    """
+    S3 Tool-Runner 基类：负责目录管理、日志追踪、状态同步及预算控制
+    """
+
     def __init__(self, task_id: str):
         self.task_id = task_id
         # 严格遵守 Evidence Store 目录规范
@@ -18,24 +21,26 @@ class BaseRunner:
     def _initialize_environment(self):
         """确保物理目录存在并初始化状态文件"""
         self.log_dir.mkdir(parents=True, exist_ok=True)
-        # 修复回归问题：创建初始 status.json
         status_path = self.base_dir / "status.json"
         if not status_path.exists():
             self.update_status({
                 "state": "init",
                 "stage": "Stage0_Create",
                 "percent": 0,
-                "hint": "Task initialized",
+                "hint": "任务初始化完成",
                 "blocked": {"is_blocked": False}
             })
 
     def update_status(self, status_update: Dict[str, Any]):
-        """更新任务状态合同并落盘"""
+        """更新物理 status.json 证据文件，确保状态合同一致"""
         status_path = self.base_dir / "status.json"
         current_status = {}
         if status_path.exists():
-            with open(status_path, "r", encoding="utf-8") as f:
-                current_status = json.load(f)
+            try:
+                with open(status_path, "r", encoding="utf-8") as f:
+                    current_status = json.load(f)
+            except Exception:
+                current_status = {}
 
         current_status.update(status_update)
         current_status["task_id"] = self.task_id
@@ -51,32 +56,32 @@ class BaseRunner:
         with open(log_path, "a", encoding="utf-8") as f:
             f.write(f"[{timestamp}] {message}\n")
 
-    def save_artifact(self, filename: str, data: dict):
-        """保存产物至 Evidence Store"""
+    def save_artifact(self, filename: str, data: Dict[str, Any]):
+        """将生成的证据存入 Evidence Store"""
         file_path = self.base_dir / filename
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
+        self.write_log("system", f"产物已落盘: {filename}")
 
-        # api/v1/Penetration/runner/base.py
-
-        def run_tool(self, cmd: list, stage_name: str, timeout: int = 3600):
-            self.write_log(stage_name, f"执行命令: {' '.join(cmd)}")
-            try:
-                # 核心修复：显式指定 encoding="utf-8"
-                # 增加 errors="ignore" 以防止工具输出中包含乱码导致程序崩溃
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=timeout,
-                    encoding="utf-8",
-                    errors="ignore"
-                )
-                if result.stdout:
-                    self.write_log(stage_name, f"STDOUT: {result.stdout}")
-                if result.stderr:
-                    self.write_log(stage_name, f"STDERR: {result.stderr}")
-                return result.stdout
-            except subprocess.TimeoutExpired:
-                self.write_log(stage_name, "错误: 工具执行超时")
-                return None
+    def run_tool(self, cmd: list, stage_name: str, timeout: int = 3600) -> Optional[str]:
+        """封装工具执行，解决 Windows 编码与超时控制"""
+        self.write_log(stage_name, f"执行命令: {' '.join(cmd)}")
+        try:
+            # 显式指定 utf-8 编码，防止 Windows 默认 gbk 报错
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                encoding="utf-8",
+                errors="ignore"
+            )
+            if result.stdout: self.write_log(stage_name, f"STDOUT: {result.stdout}")
+            if result.stderr: self.write_log(stage_name, f"STDERR: {result.stderr}")
+            return result.stdout
+        except subprocess.TimeoutExpired:
+            self.write_log(stage_name, "错误: 工具执行超时")
+            return None
+        except Exception as e:
+            self.write_log(stage_name, f"异常: {str(e)}")
+            return None

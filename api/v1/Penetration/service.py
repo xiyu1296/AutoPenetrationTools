@@ -47,7 +47,7 @@ class TaskService:
 
     @staticmethod
     def run_task(task_id: str) -> Dict[str, Any]:
-        """运行任务：从这里开始接管 S3 的物理执行"""
+        """运行任务：触发 S3 Runner 的物理执行"""
         task = task_crud.get(task_id)
         if not task:
             raise HTTPException(404, "task_id not found")
@@ -55,44 +55,18 @@ class TaskService:
         # 1. 更新内存状态
         task_crud.update(task_id, state="running", stage="stage1_scan", percent=10)
 
-        # 2. 实例化 S3 执行器
-        # 提示：在生产环境中，这里应该使用后台任务 (BackgroundTasks)
-        # 为了演示闭环，我们先进行同步调用或简单封装
-        runner = NmapRunner(task_id)
-
-        # 获取目标（这里假设目标在创建时已存入 budget 或 task 对象）
+        # 2. 实例化并启动物理扫描器
+        # 注意：此处应根据实际架构决定是否使用 BackgroundTasks
         target = task.budget.get("target", "127.0.0.1")
-
-        # 3. 触发真实扫描
+        runner = NmapRunner(task_id)
         runner.scan(target)
 
         return {
             "task_id": task_id,
             "state": "running",
-            "message": "Real scan initiated and assets.json created"
+            "message": "任务已启动，物理扫描中"
         }
 
-    @staticmethod
-    def run_task(task_id: str) -> Dict[str, Any]:
-        """运行任务"""
-        task = task_crud.get(task_id)
-        if not task:
-            raise HTTPException(404, "task_id not found")
-
-        # 更新任务状态
-        task_crud.update(
-            task_id,
-            state="running",
-            stage="stage1_scan",
-            percent=25,
-            hint="Scanning (mock)"
-        )
-
-        return {
-            "task_id": task_id,
-            "state": task.state,
-            "message": "Task execution started"
-        }
 
     @staticmethod
     def get_status(task_id: str) -> Dict[str, Any]:
