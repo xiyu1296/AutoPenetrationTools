@@ -10,12 +10,32 @@
     uv add <package>
 ```
 
-### 运行
+### 运行方式
+
+#### 本地运行
 ```bash
-    python app.py
+python app.py
 ```
-##### 调试页面：localhost:8020/docs
-##### openapi：localhost:8020/openapi.json
+
+#### Docker 部署（推荐）
+```bash
+# Linux/Mac
+./deploy.sh
+
+# Windows
+deploy.bat
+
+# 或手动部署
+docker-compose build
+docker-compose up -d
+# 关闭服务
+docker-compose down
+```
+
+##### 访问地址
+- 应用主页：http://localhost:8020
+- API 文档：http://localhost:8020/docs
+- OpenAPI 规范：http://localhost:8020/openapi.json
 
 
 ### 文件架构
@@ -40,5 +60,5 @@
 ```
 
 ### 注意事项
-1、导入dify的openapi.json最好只保留Docker内部访问的url   
-2、
+1. 导入 dify 的 openapi.json 最好只保留 Docker 内部访问的 url
+2. 

@@ -1,4 +1,7 @@
+version: '3.8'
+
 services:
+  # PostgreSQL 数据库服务
   postgres:
     image: postgres:15
     container_name: my_postgres
@@ -11,3 +14,44 @@ services:
       - "5438:5432"
     volumes:
       - ./data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d mydatabase"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - app-network
+
+  # FastAPI 应用服务
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fastapi_app
+    restart: unless-stopped
+    ports:
+      - "8020:8020"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=mydatabase
+      - DB_USER=myuser
+      - DB_PASSWORD=123456
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - app-network
+
+# 网络配置
+networks:
+  app-network:
+    driver: bridge
+
+# 数据卷配置
+volumes:
+  postgres_data:
+  app_logs:
