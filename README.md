@@ -14,8 +14,8 @@
 ```bash
     python app.py
 ```
-##### 调试页面：localhost:8010/docs
-##### openai：localhost:8010/openapi.json
+##### 调试页面：localhost:8020/docs
+##### openapi：localhost:8020/openapi.json
 
 
 ### 文件架构
@@ -38,3 +38,7 @@
                 __init__.py
 
 ```
+
+### 注意事项
+1、导入dify的openapi.json最好只保留Docker内部访问的url   
+2、
