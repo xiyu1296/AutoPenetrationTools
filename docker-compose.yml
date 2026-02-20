@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  autoattack:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - X_API_KEY=your-production-key-here
+    volumes:
+      - ./runs:/app/runs  # 挂载数据目录
+    restart: unless-stopped
