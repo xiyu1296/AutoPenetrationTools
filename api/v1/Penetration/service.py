@@ -1,11 +1,17 @@
 import json
 import secrets
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
+
 from fastapi import HTTPException
 
-from .schema import Budget, TaskCreateRequest
 from .crud import task_crud
+from .reporter import ReporterRunner
+from .runner.candidate import CandidateRunner
+from .runner.crawler import CrawlerRunner
+from .runner.httpx import HttpxRunner
 from .runner.nmap import NmapRunner
+from .runner.validator import ValidatorRunner
+from .schema import Budget
 
 
 class TaskService:
@@ -46,27 +52,18 @@ class TaskService:
         }
 
     @staticmethod
-    def run_task(task_id: str) -> Dict[str, Any]:
-        """运行任务：触发 S3 Runner 的物理执行"""
-        task = task_crud.get(task_id)
-        if not task:
-            raise HTTPException(404, "task_id not found")
+    def run_task(task_id: str):
+        # 1. 侦察阶段
+        NmapRunner(task_id).scan("127.0.0.1", ports="8080")
+        HttpxRunner(task_id).run_fingerprint()
 
-        # 1. 更新内存状态
-        task_crud.update(task_id, state="running", stage="stage1_scan", percent=10)
+        # 2. 挖掘阶段
+        CrawlerRunner(task_id).run_crawl()
+        CandidateRunner(task_id).filter_candidates()
 
-        # 2. 实例化并启动物理扫描器
-        # 注意：此处应根据实际架构决定是否使用 BackgroundTasks
-        target = task.budget.get("target", "127.0.0.1")
-        runner = NmapRunner(task_id)
-        runner.scan(target)
-
-        return {
-            "task_id": task_id,
-            "state": "running",
-            "message": "任务已启动，物理扫描中"
-        }
-
+        # 3. 验证与交付阶段
+        ValidatorRunner(task_id).verify()
+        ReporterRunner(task_id).generate_final_package()
 
     @staticmethod
     def get_status(task_id: str) -> Dict[str, Any]:
@@ -167,6 +164,7 @@ class TaskService:
                 },
             ]
         }
+
 
 # 服务实例
 task_service = TaskService()
