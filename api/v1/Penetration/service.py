@@ -5,6 +5,7 @@ from fastapi import HTTPException
 
 from .schema import Budget, TaskCreateRequest
 from .crud import task_crud
+from .runner.nmap import NmapRunner
 
 
 class TaskService:
@@ -42,6 +43,33 @@ class TaskService:
             "task_id": task_id,
             "state": task.state,
             "created_at": task.updated_at
+        }
+
+    @staticmethod
+    def run_task(task_id: str) -> Dict[str, Any]:
+        """运行任务：从这里开始接管 S3 的物理执行"""
+        task = task_crud.get(task_id)
+        if not task:
+            raise HTTPException(404, "task_id not found")
+
+        # 1. 更新内存状态
+        task_crud.update(task_id, state="running", stage="stage1_scan", percent=10)
+
+        # 2. 实例化 S3 执行器
+        # 提示：在生产环境中，这里应该使用后台任务 (BackgroundTasks)
+        # 为了演示闭环，我们先进行同步调用或简单封装
+        runner = NmapRunner(task_id)
+
+        # 获取目标（这里假设目标在创建时已存入 budget 或 task 对象）
+        target = task.budget.get("target", "127.0.0.1")
+
+        # 3. 触发真实扫描
+        runner.scan(target)
+
+        return {
+            "task_id": task_id,
+            "state": "running",
+            "message": "Real scan initiated and assets.json created"
         }
 
     @staticmethod
@@ -165,7 +193,6 @@ class TaskService:
                 },
             ]
         }
-
 
 # 服务实例
 task_service = TaskService()
