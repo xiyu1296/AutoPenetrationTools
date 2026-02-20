@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Header, HTTPException
-from fastapi.responses import Response
-from typing import Optional, Dict, Any
 import io
 import zipfile
+from typing import Optional, Dict, Any
 
-from .runner.nmap import NmapRunner
-from .schema import (
+from fastapi import APIRouter, Header, HTTPException
+from fastapi.responses import Response
+
+from api.v1.Penetration.runner.nmap import NmapRunner
+from api.v1.Penetration.schema import (
     TaskCreateRequest, TaskRunRequest,
-    TaskApproveRequest, Budget
+    TaskApproveRequest
 )
-from .service import task_service
+from api.v1.Penetration.service import task_service
 
 # 配置
 API_KEY = "test-key"  # 你可以随便改；Dify 里要填同样的值
@@ -128,6 +129,7 @@ def scan_nmap(
     result = runner.scan(target)
 
     return {"ok": True, "data": result}
+
 
 @penetrationRouter.post("/verify/controlled")
 def verify_controlled(
