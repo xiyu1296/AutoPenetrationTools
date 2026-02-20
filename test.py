@@ -6,7 +6,6 @@ import zipfile
 from pathlib import Path
 
 # 导入业务 Runner 与 Service
-from api.v1.Penetration.service import TaskService
 from api.v1.Penetration.runner.nmap import NmapRunner
 from api.v1.Penetration.runner.httpx import HttpxRunner
 from api.v1.Penetration.runner.crawler import CrawlerRunner
