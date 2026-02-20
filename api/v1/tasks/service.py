@@ -11,7 +11,7 @@ from api.v1.Penetration.runner.crawler import CrawlerRunner
 from api.v1.Penetration.runner.httpx import HttpxRunner
 from api.v1.Penetration.runner.nmap import NmapRunner
 from api.v1.Penetration.runner.validator import ValidatorRunner
-from api.v1.Penetration.tasks.schema import Budget
+from api.v1.tasks.schema import Budget
 
 
 class TaskService:

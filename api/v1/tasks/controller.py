@@ -6,11 +6,11 @@ from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import Response
 
 from api.v1.Penetration.runner.nmap import NmapRunner
-from api.v1.Penetration.tasks.schema import (
+from api.v1.tasks.schema import (
     TaskCreateRequest, TaskRunRequest,
     TaskApproveRequest
 )
-from api.v1.Penetration.tasks.service import task_service
+from api.v1.tasks.service import task_service
 
 # 配置
 API_KEY = "test-key"  # 你可以随便改；Dify 里要填同样的值
