@@ -38,27 +38,94 @@ docker-compose down
 - OpenAPI 规范：http://localhost:8020/openapi.json
 
 
-### 文件架构
+### 项目架构说明
 
-```commandline
-│  app.py                           # 主程序
-│  pyproject.toml
-│  README.md
-│  uv.lock
-└─ api
-    └─ v1
-        │  __init__.py            # 模块路由挂载在此处，最后统一挂载到主路由
-        │  
-        └─Penetration             # 模块名（拓展只需创建相同架构的文件）
-                controller.py     # 控制层：定义路由接口
-                crud.py           # 数据层：进行数据库操作
-                model.py          # 模型层：定义模型类
-                schema.py         # 数据结构：数据校验
-                service.py        # 业务层：具体业务逻辑
-                __init__.py
+本项目采用双应用架构设计：
 
 ```
+项目根目录/
+├── api/              # Dify 工具 API 服务
+│   └── v1/          # API 版本管理
+│       ├── Penetration/     # 渗透测试工具模块
+│       │   ├── controller.py   # 工具接口控制器
+│       │   ├── crud.py        # 数据库操作
+│       │   ├── model.py       # 数据模型
+│       │   ├── schema.py      # 数据校验
+│       │   └── service.py     # 业务逻辑
+│       └── tasks/            # 任务管理模块
+│
+├── app/              # 主应用程序
+│   ├── api/          # 主应用 API 接口
+│   ├── common/       # 公共组件
+│   ├── config/       # 配置管理
+│   ├── core/         # 核心组件
+│   ├── utils/        # 工具函数
+│   └── main.py       # 主程序入口
+│
+├── data/             # 数据存储目录
+├── config/           # 配置文件目录
+├── Dockerfile        # Docker 构建文件
+└── docker-compose.yaml  # Docker 编排配置
+```
+
+#### 架构分工
+
+**1. API 服务层 (`api/`)**
+- 专门为 Dify 平台提供工具接口
+- 实现各种功能模块的 RESTful API
+- 支持外部系统调用和集成
+- 当前包含渗透测试、任务管理等模块
+
+**2. 主应用层 (`app/`)**
+- 最终的业务应用系统
+- 整合 Dify 工作流和其他业务逻辑
+- 提供完整的用户界面和业务功能
+- 包含用户管理、权限控制、业务流程等
+
+#### 模块扩展说明
+
+在 `api/v1/` 下创建新模块时，遵循统一架构：
+
+```
+新模块名/
+├── __init__.py      # 模块初始化
+├── controller.py    # 路由接口定义
+├── service.py       # 业务逻辑实现
+├── crud.py          # 数据库操作封装
+├── model.py         # 数据模型定义
+└── schema.py        # 数据结构校验
+```
+
+### 部署架构
+
+#### 开发环境
+```bash
+# 启动主应用
+python app.py
+
+# 启动 API 服务（如需要独立运行）
+uvicorn api.main:app --host 0.0.0.0 --port 8010
+```
+
+#### 生产环境
+使用 Docker Compose 一键部署：
+```bash
+# 构建并启动所有服务
+docker-compose up -d
+
+# 查看服务状态
+docker-compose ps
+```
+
+### 集成说明
+
+**与 Dify 平台集成：**
+1. 将 `api/` 服务部署为独立的工具服务
+2. 在 Dify 中导入 `http://api-service:8010/openapi.json`
+3. 主应用 `app/` 通过调用 Dify 工作流完成复杂业务逻辑
 
 ### 注意事项
-1. 导入 dify 的 openapi.json 最好只保留 Docker 内部访问的 url
-2. 
+1. 导入 Dify 的 openapi.json 建议使用内部服务地址
+2. 生产环境建议使用 HTTPS 和认证机制
+3. 数据库存储路径需要持久化挂载
+4. 日志文件建议统一收集和管理 

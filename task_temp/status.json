@@ -1,0 +1,13 @@
+{
+  "task_id": "task_60974943",
+  "state": "running",
+  "stage": 1,
+  "progress": 100,
+  "metrics": {
+    "open_ports": 0
+  },
+  "flags": {},
+  "error": null,
+  "message": "审批通过，任务继续",
+  "updated_at": "2026-02-20 16:19:17.923852"
+}

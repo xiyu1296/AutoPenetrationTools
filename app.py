@@ -5,9 +5,9 @@ app = FastAPI(
     description="FastAPI",
     version="0.1.0",
     servers=[
-        {"url": "http://localhost:8030", "description": "本地访问"},
-        {"url": "http://127.0.0.1:8030", "description": "本地IP访问"},
-        {"url": "http://host.docker.internal:8030", "description": "Docker内部访问"}
+        {"url": "http://localhost:8020", "description": "本地访问"},
+        {"url": "http://127.0.0.1:8020", "description": "本地IP访问"},
+        {"url": "http://host.docker.internal:8020", "description": "Docker内部访问"}
     ]
 )
 
@@ -24,5 +24,6 @@ app.include_router(sys_router)  # 主程序
 
 if __name__ == "__main__":
     import uvicorn
+    import os
 
-    uvicorn.run(app, host="0.0.0.0", port=8030)
+    uvicorn.run(app, host="0.0.0.0", port=8020)

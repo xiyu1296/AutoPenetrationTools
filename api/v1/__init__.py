@@ -4,8 +4,7 @@ v1Router = APIRouter(
     prefix="/v1",
 )
 
-from .Penetration.controller import penetrationRouter
-from .tasks.controller import task_router
+from api.v1.tasks.controller import penetrationRouter, taskRouter
 
 v1Router.include_router(penetrationRouter)
-v1Router.include_router(task_router)
+v1Router.include_router(taskRouter)
