@@ -5,6 +5,7 @@ from typing import Optional, Dict, Any
 from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import Response
 
+from api.v1.Penetration.runner.httpx import HttpxRunner
 from api.v1.Penetration.runner.nmap import NmapRunner
 from api.v1.tasks.schema import (
     TaskCreateRequest, TaskRunRequest,
@@ -16,6 +17,11 @@ from api.v1.tasks.service import task_service
 API_KEY = "test-key"  # 你可以随便改；Dify 里要填同样的值
 
 # 创建FastAPI应用
+taskRouter = APIRouter(
+    prefix="/task",
+    tags=["任务管理"],
+)
+
 penetrationRouter = APIRouter(
     prefix="/penetration",
     tags=["渗透测试工作流"],
@@ -31,7 +37,7 @@ def require_key(x_api_key: Optional[str]):
         )
 
 
-@penetrationRouter.post("/task/create")
+@taskRouter.post("/create")
 def create_task(
         req: TaskCreateRequest,
         x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
@@ -46,7 +52,7 @@ def create_task(
     return task_service.create_task(req.target, req.base_url, budget_obj)
 
 
-@penetrationRouter.post("/task/run")
+@taskRouter.post("/run")
 def run_task(
         req: TaskRunRequest,
         x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
@@ -56,7 +62,7 @@ def run_task(
     return task_service.run_task(req.task_id)
 
 
-@penetrationRouter.get("/task/status")
+@taskRouter.get("/status")
 def task_status(
         task_id: str,
         x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
@@ -66,7 +72,7 @@ def task_status(
     return task_service.get_status(task_id)
 
 
-@penetrationRouter.post("/task/approve")
+@taskRouter.post("/approve")
 def approve_task(
         req: TaskApproveRequest,
         x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
@@ -81,7 +87,7 @@ def approve_task(
     )
 
 
-@penetrationRouter.get("/artifacts/list")
+@taskRouter.get("/artifacts/list")
 def list_artifacts(
         task_id: str,
         x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
@@ -91,7 +97,7 @@ def list_artifacts(
     return task_service.list_artifacts(task_id)
 
 
-@penetrationRouter.get("/artifacts/download")
+@taskRouter.get("/artifacts/download")
 def download(
         task_id: str,
         path: str,
@@ -149,3 +155,39 @@ def render_report(
     """模拟报告生成"""
     require_key(x_api_key)
     return {"ok": True, "message": "report done (mock)"}
+
+
+from api.v1.Penetration.runner.crawler import CrawlerRunner
+from api.v1.Penetration.runner.candidate import CandidateRunner
+from api.v1.Penetration.runner.validator import ValidatorRunner
+from api.v1.Penetration.reporter import ReporterRunner
+
+# 1. 补充 /probe/httpx 接口
+@penetrationRouter.post("/probe/httpx")
+def probe_httpx(task_id: str, x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")):
+    require_key(x_api_key)
+    return {"ok": True, "data": HttpxRunner(task_id).run_fingerprint()}
+
+# 2. 补充 /crawl 接口
+@penetrationRouter.post("/crawl")
+def crawl_endpoints(task_id: str, x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")):
+    require_key(x_api_key)
+    return {"ok": True, "data": CrawlerRunner(task_id).run_crawl()}
+
+# 3. 补充 /candidate/rule 接口
+@penetrationRouter.post("/candidate/rule")
+def candidate_rule(task_id: str, x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")):
+    require_key(x_api_key)
+    return {"ok": True, "data": CandidateRunner(task_id).filter_candidates()}
+
+# 4. 替换 /verify/controlled 的 Mock 实现
+@penetrationRouter.post("/verify/controlled")
+def verify_controlled(task_id: str, x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")):
+    require_key(x_api_key)
+    return {"ok": True, "data": ValidatorRunner(task_id).verify()}
+
+# 5. 替换 /report/render 的 Mock 实现
+@penetrationRouter.post("/report/render")
+def render_report(task_id: str, x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")):
+    require_key(x_api_key)
+    return {"ok": True, "data": ReporterRunner(task_id).generate_final_package()}

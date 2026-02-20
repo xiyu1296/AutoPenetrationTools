@@ -45,6 +45,14 @@ class TaskService:
         task_id = "t_" + secrets.token_hex(4)
         task = task_crud.create(task_id, budget_obj.model_dump())
 
+        # 初始化物理目录并注入预算合同
+        from api.v1.Penetration.runner.base import BaseRunner
+        runner = BaseRunner(task_id)
+        runner.update_status({
+            "target": target,
+            "budget": budget_obj.model_dump()
+        })
+
         return {
             "task_id": task_id,
             "state": task.state,
