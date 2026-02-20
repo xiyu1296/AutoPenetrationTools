@@ -5,9 +5,9 @@ app = FastAPI(
     description="FastAPI",
     version="0.1.0",
     servers=[
-        {"url": "http://localhost:8020", "description": "本地访问"},
-        {"url": "http://127.0.0.1:8020", "description": "本地IP访问"},
-        {"url": "http://host.docker.internal:8020", "description": "Docker内部访问"}
+        {"url": "http://localhost:8030", "description": "本地访问"},
+        {"url": "http://127.0.0.1:8030", "description": "本地IP访问"},
+        {"url": "http://host.docker.internal:8030", "description": "Docker内部访问"}
     ]
 )
 
@@ -16,11 +16,13 @@ import fastapi_cdn_host
 fastapi_cdn_host.patch_docs(app)
 
 from api.v1 import v1Router
+from app.api.v1.module_system import sys_router
 
 # 不需要在这挂载了，在./api/v1/__init__.py中挂载哦
-app.include_router(v1Router)
+app.include_router(v1Router)  # 工具模块
+app.include_router(sys_router)  # 主程序
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8020)
+    uvicorn.run(app, host="0.0.0.0", port=8030)

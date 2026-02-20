@@ -1,5 +1,0 @@
-fastapi
-fastapi_cdn_host
-uvicorn
-httpx
-python-multipart
