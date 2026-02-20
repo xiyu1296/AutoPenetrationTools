@@ -19,6 +19,11 @@ from api.v1 import v1Router
 
 app.include_router(v1Router)
 
+
+
+from api.v1.Penetration.controller import task_router
+app.include_router(task_router)
+
 if __name__ == "__main__":
     import uvicorn
 
