@@ -137,24 +137,7 @@ def scan_nmap(
     return {"ok": True, "data": result}
 
 
-@penetrationRouter.post("/verify/controlled")
-def verify_controlled(
-        payload: Dict[str, Any],
-        x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
-):
-    """模拟验证"""
-    require_key(x_api_key)
-    return {"ok": True, "message": "verify done (mock)"}
 
-
-@penetrationRouter.post("/report/render")
-def render_report(
-        payload: Dict[str, Any],
-        x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
-):
-    """模拟报告生成"""
-    require_key(x_api_key)
-    return {"ok": True, "message": "report done (mock)"}
 
 
 from api.v1.Penetration.runner.crawler import CrawlerRunner
