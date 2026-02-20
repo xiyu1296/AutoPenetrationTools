@@ -62,12 +62,23 @@ class BaseRunner:
             json.dump(data, f, ensure_ascii=False, indent=2)
         self.write_log("system", f"产物已落盘: {filename}")
 
-    def run_tool(self, cmd: list, stage_name: str, timeout: int = 3600) -> Optional[str]:
-        self.write_log(stage_name, f"执行命令: {' '.join(cmd)}")
+    def _get_budget_timeout(self) -> int:
+        """从状态文件中读取预算的超时时间，默认 900 秒"""
+        status_path = self.base_dir / "status.json"
+        if status_path.exists():
+            try:
+                with open(status_path, "r", encoding="utf-8") as f:
+                    return json.load(f).get("budget", {}).get("timeout_seconds", 900)
+            except Exception:
+                pass
+        return 900
+
+    def run_tool(self, cmd: list, stage_name: str, timeout: int = None) -> Optional[str]:
+        if timeout is None:
+            timeout = self._get_budget_timeout()
+
+        self.write_log(stage_name, f"执行命令: {' '.join(cmd)}, 超时限制: {timeout}秒")
         try:
-            # 关键修复：
-            # 1. stdin=subprocess.DEVNULL 防止工具等待键盘输入
-            # 2. 显式指定 encoding 和 errors 解决 Windows 编码崩溃
             result = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -77,14 +88,13 @@ class BaseRunner:
                 errors="ignore",
                 stdin=subprocess.DEVNULL
             )
-
             if result.stdout:
                 self.write_log(stage_name, f"STDOUT 长度: {len(result.stdout)}")
             return result.stdout
 
         except subprocess.TimeoutExpired as e:
-            # 超时也要记录已有的输出，防止完全卡死
-            self.write_log(stage_name, "错误: 执行超时")
+            self.write_log(stage_name, f"错误: 执行超时（> {timeout}秒），保留截断数据")
+            self.update_status({"hint": f"警告: {stage_name} 触发超时限制，输出部分结果"})
             return e.stdout.decode(errors="ignore") if e.stdout else None
         except Exception as e:
             self.write_log(stage_name, f"异常: {str(e)}")

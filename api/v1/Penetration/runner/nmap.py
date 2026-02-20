@@ -12,7 +12,13 @@ class NmapRunner(BaseRunner):
         self.update_status({"stage": "Stage1_Asset", "hint": f"正在扫描目标: {target}", "percent": 15})
 
         # 真实调用 Nmap
-        cmd = ["nmap", "-sV", "-p", ports, target]
+        # 端口范围合法性校验与兜底
+        if not ports or not re.match(r'^[\d,\-]+$', ports):
+            self.write_log("stage1_asset", f"未指定有效端口范围({ports})，降级为 top 100 扫描")
+            cmd = ["nmap", "-sV", "--top-ports", "100", target]
+        else:
+            cmd = ["nmap", "-sV", "-p", ports, target]
+
         output = self.run_tool(cmd, "stage1_asset")
 
         # 简单的正则解析：匹配开放端口与服务
