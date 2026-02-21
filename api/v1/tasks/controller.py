@@ -174,3 +174,96 @@ def verify_controlled(task_id: str, x_api_key: Optional[str] = Header(default=No
 def render_report(task_id: str, x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")):
     require_key(x_api_key)
     return {"ok": True, "data": ReporterRunner(task_id).generate_final_package()}
+
+
+from api.v1.tasks.schema import (ToolNucleiRequest, ToolNucleiResponse)
+from api.v1.Penetration.runner.nuclei import NucleiRunner
+
+
+@penetrationRouter.post("/tool/nuclei", response_model=ToolNucleiResponse)
+def tool_nuclei_scan(
+        req: ToolNucleiRequest,
+        x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
+):
+    """
+    独立工具调用：Nuclei 漏洞扫描
+    Dify 可以直接传入疑似存在漏洞的 URL 列表进行扫描。
+    """
+    require_key(x_api_key)
+
+    runner = NucleiRunner(req.task_id)
+    findings = runner.run_scan(req.targets, req.templates)
+
+    return ToolNucleiResponse(ok=True, findings=findings)
+
+
+from api.v1.tasks.schema import ToolSqlmapRequest, ToolSqlmapResponse, SqlmapFinding
+from api.v1.Penetration.runner.sqlmap import SqlmapRunner
+
+
+@penetrationRouter.post("/tool/sqlmap", response_model=ToolSqlmapResponse)
+def tool_sqlmap_scan(
+        req: ToolSqlmapRequest,
+        x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
+):
+    """
+    独立工具调用：SQLMap 注入点探测
+    Dify 可以在发现带参数的 URL 时主动调用此接口验证 SQL 注入漏洞。
+    """
+    require_key(x_api_key)
+
+    runner = SqlmapRunner(req.task_id)
+    result = runner.run_injection_test(req.target_url, req.risk_level)
+
+    finding_obj = SqlmapFinding(**result)
+
+    return ToolSqlmapResponse(ok=True, finding=finding_obj)
+
+
+from api.v1.tasks.schema import ToolDirScanRequest, ToolDirScanResponse
+from api.v1.Penetration.runner.dirscan import DirScanRunner
+
+
+# api/v1/Penetration/tasks/controller.py (定位并替换 tool_dirscan 函数)
+
+@penetrationRouter.post("/tool/dirscan", response_model=ToolDirScanResponse)
+def tool_dirscan(
+        req: ToolDirScanRequest,
+        x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
+):
+    """
+    独立工具调用：FFUF 目录扫描 (已集成 SecLists)
+    """
+    require_key(x_api_key)
+
+    runner = DirScanRunner(req.task_id)
+    findings = runner.run_scan(req.target_url, req.extensions, req.wordlist_type)
+
+    return ToolDirScanResponse(ok=True, findings=findings)
+
+
+from api.v1.tasks.schema import ToolHydraRequest, ToolHydraResponse, HydraFinding
+from api.v1.Penetration.runner.hydra import HydraRunner
+
+
+@penetrationRouter.post("/tool/hydra", response_model=ToolHydraResponse)
+def tool_hydra_bruteforce(
+        req: ToolHydraRequest,
+        x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
+):
+    """
+    独立工具调用：Hydra 弱口令爆破
+    用于针对 SSH、FTP、MySQL、Redis 等协议进行密码暴力破解。
+    """
+    require_key(x_api_key)
+
+    runner = HydraRunner(req.task_id)
+    result = runner.run_bruteforce(req.target_ip, req.service, req.port)
+
+    findings_objs = [HydraFinding(**f) for f in result.get("findings", [])]
+
+    return ToolHydraResponse(
+        ok=True,
+        is_cracked=result.get("is_cracked", False),
+        findings=findings_objs
+    )
