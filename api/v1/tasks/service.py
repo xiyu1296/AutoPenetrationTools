@@ -1,7 +1,7 @@
 import json
 import secrets
 import os
-from datetime import datetime  
+from datetime import datetime
 from typing import Dict, Any, Optional
 
 from fastapi import HTTPException
@@ -48,7 +48,7 @@ class TaskService:
             "target": target,
             "budget": budget_obj.model_dump()
         })
-        
+
         # 生成 scope.json
         scope_data = {
             "task_id": task_id,
@@ -57,7 +57,7 @@ class TaskService:
             "budget": budget_obj.model_dump(),
             "created_at": datetime.now().isoformat()
         }
-        
+
         os.makedirs(f"runs/{task_id}", exist_ok=True)
         with open(f"runs/{task_id}/scope.json", "w", encoding="utf-8") as f:
             json.dump(scope_data, f, ensure_ascii=False, indent=2)
@@ -75,10 +75,10 @@ class TaskService:
         task = task_crud.get(task_id)
         if not task:
             raise HTTPException(404, "task_id not found")
-        
+
         # ===== 幂等检查（写文件记录） =====
         run_request_path = f"runs/{task_id}/run_request.json"
-        
+
         # 检查是否已经运行过（有文件说明已经触发过）
         if os.path.exists(run_request_path):
             return {
@@ -86,7 +86,7 @@ class TaskService:
                 "state": task.state,
                 "message": "Task already triggered"
             }
-        
+
         # 检查是否已经在运行状态
         if task.state == "running":
             return {
@@ -95,7 +95,7 @@ class TaskService:
                 "message": "Task already running"
             }
         # ================================
-        
+
         # 2. 更新状态为 running（stage0表示已触发）
         task_crud.update(
             task_id,
@@ -104,7 +104,7 @@ class TaskService:
             percent=0,
             hint="Task triggered, waiting for Dify"
         )
-        
+
         # 3. 记录运行开始（写文件）
         os.makedirs(f"runs/{task_id}", exist_ok=True)
         run_record = {
@@ -114,10 +114,10 @@ class TaskService:
         }
         with open(run_request_path, "w", encoding="utf-8") as f:
             json.dump(run_record, f, ensure_ascii=False, indent=2)
-        
+
         # 4. 触发 Dify 工作流（如果有）
         # trigger_dify_workflow(task_id)
-        
+
         return {
             "task_id": task_id,
             "state": "running",
@@ -178,7 +178,7 @@ class TaskService:
             "remark": remark,
             "time": datetime.now().isoformat()
         }
-        
+
         os.makedirs(f"runs/{task_id}", exist_ok=True)
         with open(f"runs/{task_id}/approval.json", "w", encoding="utf-8") as f:
             json.dump(approval_data, f, ensure_ascii=False, indent=2)

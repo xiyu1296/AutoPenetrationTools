@@ -1,0 +1,15 @@
+{
+  "task_id": "t_910195a1",
+  "candidates": [
+    {
+      "url": "http://127.0.0.1:80",
+      "reason": "Base target",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:80/apps",
+      "reason": "Base target",
+      "method": "GET"
+    }
+  ]
+}

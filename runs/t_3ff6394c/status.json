@@ -1,0 +1,16 @@
+{
+  "state": "init",
+  "stage": "Stage0_Create",
+  "percent": 0,
+  "hint": "任务初始化完成",
+  "blocked": {
+    "is_blocked": false
+  },
+  "task_id": "t_3ff6394c",
+  "updated_at": "2026-02-21T13:28:53.350523",
+  "target": "string",
+  "budget": {
+    "timeout_seconds": 900,
+    "rate_limit_rps": 1.0
+  }
+}

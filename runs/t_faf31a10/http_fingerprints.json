@@ -1,0 +1,35 @@
+{
+  "task_id": "t_faf31a10",
+  "total_found": 1,
+  "fingerprints": [
+    {
+      "timestamp": "2026-02-21T13:38:45.6293486+08:00",
+      "port": "80",
+      "url": "http://127.0.0.1:80",
+      "input": "127.0.0.1:80",
+      "location": "/apps",
+      "scheme": "http",
+      "webserver": "nginx/1.29.5",
+      "method": "GET",
+      "host": "127.0.0.1",
+      "host_ip": "127.0.0.1",
+      "path": "/",
+      "time": "6.7308ms",
+      "a": [
+        "127.0.0.1"
+      ],
+      "tech": [
+        "Nginx:1.29.5"
+      ],
+      "words": 1,
+      "lines": 1,
+      "status_code": 307,
+      "content_length": 5,
+      "failed": false,
+      "knowledgebase": {
+        "PageType": "login",
+        "pHash": 0
+      }
+    }
+  ]
+}

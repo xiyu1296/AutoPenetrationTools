@@ -1,0 +1,16 @@
+{
+  "task_id": "t_89761dab",
+  "target": "127.0.0.1",
+  "hosts": [
+    {
+      "ip": "127.0.0.1",
+      "ports": [
+        {
+          "port": 80,
+          "service": "mock-http"
+        }
+      ]
+    }
+  ],
+  "status": "completed"
+}

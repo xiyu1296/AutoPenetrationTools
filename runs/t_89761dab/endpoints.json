@@ -1,0 +1,17 @@
+{
+  "task_id": "t_89761dab",
+  "endpoints": [
+    {
+      "request": {
+        "url": "http://127.0.0.1:80",
+        "method": "GET"
+      }
+    },
+    {
+      "request": {
+        "url": "http://127.0.0.1:80/apps",
+        "method": "GET"
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "state": "init",
+  "stage": "Stage6_Report",
+  "percent": 100,
+  "hint": "任务圆满完成，交付物已就绪",
+  "blocked": {
+    "is_blocked": false
+  },
+  "task_id": "t_910195a1",
+  "updated_at": "2026-02-21T14:17:46.112309",
+  "target": "127.0.0.1",
+  "budget": {
+    "timeout_seconds": 900,
+    "rate_limit_rps": 1.0
+  }
+}

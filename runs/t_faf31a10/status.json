@@ -1,0 +1,16 @@
+{
+  "state": "init",
+  "stage": "Stage2_Fingerprint",
+  "percent": 55,
+  "hint": "发现 1 个 Web 指纹",
+  "blocked": {
+    "is_blocked": false
+  },
+  "task_id": "t_faf31a10",
+  "updated_at": "2026-02-21T13:38:45.658290",
+  "target": "127.0.0.1",
+  "budget": {
+    "timeout_seconds": 900,
+    "rate_limit_rps": 1.0
+  }
+}

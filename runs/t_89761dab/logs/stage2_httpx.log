@@ -1,0 +1,3 @@
+[2026-02-21 17:32:24] 执行工具命令: ./pd-httpx.exe -u 127.0.0.1:80 -title -tech-detect -status-code -json -silent
+[2026-02-21 17:32:24] 执行命令: ./pd-httpx.exe -u 127.0.0.1:80 -title -tech-detect -status-code -json -silent, 超时限制: 900秒
+[2026-02-21 17:32:28] STDOUT 长度: 422
