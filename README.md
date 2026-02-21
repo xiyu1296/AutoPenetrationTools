@@ -129,3 +129,125 @@ docker-compose ps
 2. 生产环境建议使用 HTTPS 和认证机制
 3. 数据库存储路径需要持久化挂载
 4. 日志文件建议统一收集和管理 
+
+
+# API 接口文档
+
+## 全局说明
+
+* **认证方式**：所有接口均需在 HTTP Header 中提供 `X-API-Key` 进行鉴权。
+* **认证失败**：缺失或无效的 API Key 将返回 `401 Unauthorized`。
+
+---
+
+## 模块一：任务管理 (Task Management)
+
+**路由前缀**: `/task`
+
+### 1. 创建任务
+
+* **路径**: `/create`
+* **方法**: `POST`
+* **请求体**: `TaskCreateRequest` (包含 `target`, `base_url`, `budget`)
+* **功能**: 解析预算配置，初始化并创建新的渗透测试任务。
+
+### 2. 运行任务
+
+* **路径**: `/run`
+* **方法**: `POST`
+* **请求体**: `TaskRunRequest` (包含 `task_id`)
+* **功能**: 根据任务 ID 启动全自动化测试流程。
+
+### 3. 获取任务状态
+
+* **路径**: `/status`
+* **方法**: `GET`
+* **查询参数**:
+* `task_id` (string)
+
+
+* **功能**: 查询指定任务的当前执行状态。
+
+### 4. 审批任务
+
+* **路径**: `/approve`
+* **方法**: `POST`
+* **请求体**: `TaskApproveRequest` (包含 `task_id`, `action`, `approver`, `remark`)
+* **功能**: 对处于挂起状态的任务执行人工审批（批准或拒绝）。
+
+### 5. 列出制品
+
+* **路径**: `/artifacts/list`
+* **方法**: `GET`
+* **查询参数**:
+* `task_id` (string)
+
+
+* **功能**: 获取指定任务生成的所有结果文件（制品）列表。
+
+### 6. 下载制品
+
+* **路径**: `/artifacts/download`
+* **方法**: `GET`
+* **查询参数**:
+* `task_id` (string)
+* `path` (string)
+
+
+* **响应**: `application/zip`
+* **功能**: 验证任务后，将指定路径的制品打包为 ZIP 格式供下载。
+
+---
+
+## 模块二：渗透测试工作流 (Penetration Workflow)
+
+**路由前缀**: `/penetration`
+
+### 阶段执行接口
+
+*此类接口主要用于按步骤逐步执行流水线操作。*
+
+| 路径 | 方法 | 查询参数 | 功能 |
+| --- | --- | --- | --- |
+| `/scan/nmap` | `POST` | `task_id`, `target` | 手动触发 Nmap 扫描并生成资产证据。 |
+| `/probe/httpx` | `POST` | `task_id` | 执行 Httpx 指纹识别。 |
+| `/crawl` | `POST` | `task_id` | 运行爬虫发现端点。 |
+| `/candidate/rule` | `POST` | `task_id` | 执行规则筛选，生成漏洞候选点。 |
+| `/verify/controlled` | `POST` | `task_id` | 执行受控物理验证。 |
+| `/report/render` | `POST` | `task_id` | 渲染最终报告并打包制品。 |
+
+### 独立工具调用接口 (Standalone Tools)
+
+*此类接口接收标准 JSON 请求体，用于独立触发专项测试工具。*
+
+#### 1. Nuclei 漏洞扫描
+
+* **路径**: `/tool/nuclei`
+* **方法**: `POST`
+* **请求体**: `ToolNucleiRequest` (包含 `task_id`, `targets`, `templates`)
+* **响应**: `ToolNucleiResponse`
+* **功能**: 接收 URL 列表，调用 Nuclei 执行指定模板的漏洞扫描。
+
+#### 2. SQLMap 注入探测
+
+* **路径**: `/tool/sqlmap`
+* **方法**: `POST`
+* **请求体**: `ToolSqlmapRequest` (包含 `task_id`, `target_url`, `risk_level`)
+* **响应**: `ToolSqlmapResponse` (包含 `SqlmapFinding`)
+* **功能**: 接收带有参数的 URL，调用 SQLMap 验证 SQL 注入漏洞。
+
+#### 3. FFUF 目录扫描
+
+* **路径**: `/tool/dirscan`
+* **方法**: `POST`
+* **请求体**: `ToolDirScanRequest` (包含 `task_id`, `target_url`, `extensions`, `wordlist_type`)
+* **响应**: `ToolDirScanResponse`
+* **功能**: 集成 SecLists 字典，调用 FFUF 发现隐藏目录或备份文件。
+
+#### 4. Hydra 弱口令爆破
+
+* **路径**: `/tool/hydra`
+* **方法**: `POST`
+* **请求体**: `ToolHydraRequest` (包含 `task_id`, `target_ip`, `service`, `port`)
+* **响应**: `ToolHydraResponse` (包含 `HydraFinding`)
+* **功能**: 针对 SSH、FTP、MySQL、Redis 等协议进行密码暴力破解。
