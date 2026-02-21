@@ -1,0 +1,2 @@
+[2026-02-21 18:20:04] 执行工具命令: ./pd-httpx.exe -u test_target:80 -title -tech-detect -status-code -json -silent
+[2026-02-21 18:20:04] 执行命令: ./pd-httpx.exe -u test_target:80 -title -tech-detect -status-code -json -silent, 超时限制: 600秒

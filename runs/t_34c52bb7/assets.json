@@ -1,0 +1,16 @@
+{
+  "task_id": "t_34c52bb7",
+  "target": "test_target_2",
+  "hosts": [
+    {
+      "ip": "test_target_2",
+      "ports": [
+        {
+          "port": 80,
+          "service": "mock-http"
+        }
+      ]
+    }
+  ],
+  "status": "completed"
+}

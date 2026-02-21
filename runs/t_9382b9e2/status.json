@@ -1,0 +1,16 @@
+{
+  "state": "init",
+  "stage": "Stage4_Candidate",
+  "percent": 85,
+  "hint": "锁定 0 个高价值候选点",
+  "blocked": {
+    "is_blocked": false
+  },
+  "task_id": "t_9382b9e2",
+  "updated_at": "2026-02-21T18:18:42.292750",
+  "target": "test_target",
+  "budget": {
+    "timeout_seconds": 600,
+    "rate_limit_rps": 2.0
+  }
+}
