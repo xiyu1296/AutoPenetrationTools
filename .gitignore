@@ -1,5 +1,6 @@
 task_temp/
 task_*.zip
+runs/
 
 # Virtual environments
 .venv/

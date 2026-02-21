@@ -1,13 +1,13 @@
 {
   "state": "init",
-  "stage": "Stage2_Fingerprint",
-  "percent": 45,
-  "hint": "正在调用外部工具进行指纹嗅探",
+  "stage": "Stage6_Report",
+  "percent": 100,
+  "hint": "任务圆满完成，交付物已就绪",
   "blocked": {
     "is_blocked": false
   },
   "task_id": "t_34c52bb7",
-  "updated_at": "2026-02-21T18:20:14.879186",
+  "updated_at": "2026-02-21T19:21:21.431999",
   "target": "test_target_2",
   "budget": {
     "timeout_seconds": 300,
