@@ -1,16 +1,12 @@
 import json
 import secrets
+import os  # 新增
+from datetime import datetime  
 from typing import Dict, Any, Optional
 
 from fastapi import HTTPException
 
 from api.v1.Penetration.crud import task_crud
-from api.v1.Penetration.reporter import ReporterRunner
-from api.v1.Penetration.runner.candidate import CandidateRunner
-from api.v1.Penetration.runner.crawler import CrawlerRunner
-from api.v1.Penetration.runner.httpx import HttpxRunner
-from api.v1.Penetration.runner.nmap import NmapRunner
-from api.v1.Penetration.runner.validator import ValidatorRunner
 from api.v1.tasks.schema import Budget
 
 
@@ -52,6 +48,20 @@ class TaskService:
             "target": target,
             "budget": budget_obj.model_dump()
         })
+        
+        # ===== 新增：生成 scope.json =====
+        scope_data = {
+            "task_id": task_id,
+            "target": target,
+            "base_url": base_url,
+            "budget": budget_obj.model_dump(),
+            "created_at": datetime.now().isoformat()
+        }
+        
+        os.makedirs(f"runs/{task_id}", exist_ok=True)
+        with open(f"runs/{task_id}/scope.json", "w", encoding="utf-8") as f:
+            json.dump(scope_data, f, ensure_ascii=False, indent=2)
+        # ================================
 
         return {
             "task_id": task_id,
@@ -60,18 +70,38 @@ class TaskService:
         }
 
     @staticmethod
-    def run_task(task_id: str):
-        # 1. 侦察阶段
-        NmapRunner(task_id).scan("127.0.0.1", ports="8080")
-        HttpxRunner(task_id).run_fingerprint()
-
-        # 2. 挖掘阶段
-        CrawlerRunner(task_id).run_crawl()
-        CandidateRunner(task_id).filter_candidates()
-
-        # 3. 验证与交付阶段
-        ValidatorRunner(task_id).verify()
-        ReporterRunner(task_id).generate_final_package()
+    def run_task(task_id: str) -> Dict[str, Any]:
+        """运行任务 - 只负责状态更新和触发"""
+        # 1. 校验任务存在
+        task = task_crud.get(task_id)
+        if not task:
+            raise HTTPException(404, "task_id not found")
+        
+        # 2. 更新状态为 running（stage0表示已触发）
+        task_crud.update(
+            task_id,
+            state="running",
+            stage="stage0_triggered",
+            percent=0,
+            hint="Task triggered, waiting for Dify"
+        )
+        
+        # 3. 记录运行开始
+        run_record = {
+            "task_id": task_id,
+            "started_at": str(datetime.now()),
+            "trigger": "manual"
+        }
+        # 这里可以写入文件，如果需要的话
+        
+        # 4. 触发 Dify 工作流（如果有）
+        # trigger_dify_workflow(task_id)
+        
+        return {
+            "task_id": task_id,
+            "state": "running",
+            "message": "Task triggered, Dify will execute the workflow"
+        }
 
     @staticmethod
     def get_status(task_id: str) -> Dict[str, Any]:
@@ -118,6 +148,20 @@ class TaskService:
 
         if action not in ("approve", "reject"):
             raise HTTPException(400, "action must be approve or reject")
+
+        # ===== 新增：生成 approval.json =====
+        approval_data = {
+            "task_id": task_id,
+            "action": action,
+            "approver": approver,
+            "remark": remark,
+            "time": datetime.now().isoformat()
+        }
+        
+        os.makedirs(f"runs/{task_id}", exist_ok=True)
+        with open(f"runs/{task_id}/approval.json", "w", encoding="utf-8") as f:
+            json.dump(approval_data, f, ensure_ascii=False, indent=2)
+        # ====================================
 
         update_data = {"approved": action}
 

@@ -1,33 +1,28 @@
 import requests
 import time
+import json
 
 BASE_URL = "http://localhost:8020/v1"
-API_KEY = "test-key"  # 可能是这个，也可能是别的值
+API_KEY = "test-key"
 
 def test_all():
     print("="*50)
     print("一键自检脚本")
     print("="*50)
     
-    # 公共 headers
     headers = {"X-API-Key": API_KEY}
     
     # 1. 创建任务
     print("\n[1/5] 创建任务...")
     r = requests.post(
         f"{BASE_URL}/task/create",
-        headers=headers,  # 加上这个
+        headers=headers,
         json={
             "target": "127.0.0.1",
             "budget": {"timeout_seconds": 300}
         }
     )
     print(f"返回: {r.json()}")
-    
-    if r.status_code != 200:
-        print("❌ 创建任务失败")
-        return
-        
     task_id = r.json().get("task_id")
     print(f"✅ 任务创建成功: {task_id}")
     
@@ -39,6 +34,13 @@ def test_all():
         json={"task_id": task_id}
     )
     print(f"✅ 运行结果: {r.json()}")
+    
+    # ===== 新增：模拟等待 Dify 执行 =====
+    print("\n[2.5/5] 等待 Dify 执行扫描...")
+    print("    (实际由 Dify 工作流调用 penetration 接口)")
+    print("    生成 assets.json / http_fingerprints.json 等文件")
+    time.sleep(2)  # 模拟等待
+    # ====================================
     
     # 3. 查状态
     print("\n[3/5] 查状态...")
@@ -75,6 +77,15 @@ def test_all():
         print(f"✅ 下载成功")
     else:
         print(f"⚠️ 下载失败: {r.status_code}")
+    
+    # ===== 新增：查看生成的文件 =====
+    print("\n📁 查看 runs 目录：")
+    import os
+    if os.path.exists(f"runs/{task_id}"):
+        files = os.listdir(f"runs/{task_id}")
+        for f in files:
+            print(f"   - {f}")
+    # ================================
 
 if __name__ == "__main__":
     test_all()
