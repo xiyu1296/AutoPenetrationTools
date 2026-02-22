@@ -1,8 +1,13 @@
+from api.v1.Penetration.runner.afrog import AfrogRunner
 from api.v1.Penetration.runner.amass import AmassRunner
+from api.v1.Penetration.runner.arjun import ArjunRunner
 from api.v1.Penetration.runner.dnsx import DnsxRunner
+from api.v1.Penetration.runner.feroxbuster import FeroxbusterRunner
+from api.v1.Penetration.runner.gobuster import GobusterRunner
 from api.v1.Penetration.runner.gun import GauRunner
 from api.v1.Penetration.runner.masscan import MasscanRunner
 from api.v1.Penetration.runner.naabu import NaabuRunner
+from api.v1.Penetration.runner.nikto import NiktoRunner
 from api.v1.Penetration.runner.nuclei import NucleiRunner
 from api.v1.Penetration.runner.oneforall import OneForAllRunner
 from api.v1.Penetration.runner.paramspider import ParamSpiderRunner
@@ -15,6 +20,7 @@ from api.v1.Penetration.runner.theharvester import TheHarvesterRunner
 from api.v1.Penetration.runner.trufflehog import TrufflehogRunner
 from api.v1.Penetration.runner.wafw00f import Wafw00fRunner
 from api.v1.Penetration.runner.whatweb import WhatWebRunner
+from api.v1.Penetration.runner.xray import XrayRunner
 
 
 class ToolDispatcher:
@@ -146,6 +152,42 @@ class ToolDispatcher:
             # ParamSpiderRunner 已重写为无需第三方库的原生代码
             findings = runner.run_scan(target_domain=args.get("target_domain", ""))
             summary = f"ParamSpider 运行完成，捕获 {len(findings)} 个带参 URL。"
+
+        elif tool_id == "dirsearch":
+            runner = DirsearchRunner(task_id)
+            findings = runner.run_scan(target_url=args.get("target_url", ""))
+            summary = f"Dirsearch 扫描完成，发现 {len(findings)} 个路径。"
+
+        elif tool_id == "feroxbuster":
+            runner = FeroxbusterRunner(task_id)
+            findings = runner.run_scan(
+                target_url=args.get("target_url", ""),
+                wordlist=args.get("wordlist", "common.txt")
+            )
+            summary = f"Feroxbuster 递归发现完成，识别 {len(findings)} 个有效资源。"
+
+        elif tool_id == "gobuster":
+            runner = GobusterRunner(task_id)
+            findings = runner.run_scan(
+                target_url=args.get("target_url", ""),
+                wordlist=args.get("wordlist", "common.txt")
+            )
+            summary = f"Gobuster 枚举完成，探测到 {len(findings)} 个目录/文件。"
+
+        elif tool_id == "xray":
+            runner = XrayRunner(task_id)
+            findings = runner.run_scan(target_url=args.get("target_url", ""))
+            summary = f"xray 主动扫描完成，发现 {len(findings)} 个潜在漏洞。"
+
+        elif tool_id == "afrog":
+            runner = AfrogRunner(task_id)
+            findings = runner.run_scan(target_url=args.get("target_url", ""))
+            summary = f"afrog 模板扫描完成，命中 {len(findings)} 个有效 POC。"
+
+        elif tool_id == "nikto":
+            runner = NiktoRunner(task_id)
+            findings = runner.run_scan(target_url=args.get("target_url", ""))
+            summary = f"Nikto 配置扫描完成，识别出 {len(findings)} 个服务器配置风险或过时组件。"
 
         else:
             raise ValueError(f"未注册的 tool_id: {tool_id}")
