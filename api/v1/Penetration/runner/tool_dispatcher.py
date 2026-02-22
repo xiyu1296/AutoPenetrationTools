@@ -3,11 +3,13 @@ from api.v1.Penetration.runner.dnsx import DnsxRunner
 from api.v1.Penetration.runner.gun import GauRunner
 from api.v1.Penetration.runner.nuclei import NucleiRunner
 from api.v1.Penetration.runner.oneforall import OneForAllRunner
+from api.v1.Penetration.runner.shodan import ShodanRunner
 from api.v1.Penetration.runner.sqlmap import SqlmapRunner
 from api.v1.Penetration.runner.dirscan import DirScanRunner
 from api.v1.Penetration.runner.hydra import HydraRunner
 from api.v1.Penetration.runner.subfinder import SubfinderRunner
 from api.v1.Penetration.runner.theharvester import TheHarvesterRunner
+from api.v1.Penetration.runner.trufflehog import TrufflehogRunner
 
 
 class ToolDispatcher:
@@ -86,6 +88,17 @@ class ToolDispatcher:
             # 展平封装格式以符合 UnifiedToolResponse
             findings = [res]
             summary = f"theHarvester 收集完成，提取 {len(res.get('emails', []))} 个邮箱及 {len(res.get('hosts', []))} 个主机。"
+
+        elif tool_id == "trufflehog":
+            runner = TrufflehogRunner(task_id)
+            findings = runner.run_scan(target_url=args.get("target_url", ""))
+            summary = f"Trufflehog 扫描完成，发现 {len(findings)} 处代码凭证泄露。"
+
+        elif tool_id == "shodan":
+            runner = ShodanRunner(task_id)
+            res = runner.run_scan(target_ip=args.get("target_ip", ""))
+            findings = [res] if res else []
+            summary = f"Shodan 检索完成，目标系统: {res.get('os', 'Unknown')}，开放端口: {res.get('ports', [])}。"
 
         else:
             raise ValueError(f"未注册的 tool_id: {tool_id}")
