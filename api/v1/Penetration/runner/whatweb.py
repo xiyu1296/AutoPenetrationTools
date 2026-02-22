@@ -5,13 +5,13 @@ from .base import BaseRunner
 
 
 class WhatWebRunner(BaseRunner):
-    """独立 WhatWeb 指纹识别执行器"""
+    """独立 whatweb 指纹识别执行器"""
 
     def run_scan(self, target_url: str) -> List[Dict[str, Any]]:
         if not target_url:
             return []
 
-        self.write_log("tool_whatweb", f"启动 WhatWeb，目标: {target_url}")
+        self.write_log("tool_whatweb", f"启动 whatweb，目标: {target_url}")
 
         script_path = os.path.abspath(os.path.join(os.getcwd(), "whatweb", "whatweb"))
         if not os.path.exists(script_path):

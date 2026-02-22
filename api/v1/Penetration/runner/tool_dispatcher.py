@@ -5,6 +5,7 @@ from api.v1.Penetration.runner.masscan import MasscanRunner
 from api.v1.Penetration.runner.naabu import NaabuRunner
 from api.v1.Penetration.runner.nuclei import NucleiRunner
 from api.v1.Penetration.runner.oneforall import OneForAllRunner
+from api.v1.Penetration.runner.paramspider import ParamSpiderRunner
 from api.v1.Penetration.runner.shodan import ShodanRunner
 from api.v1.Penetration.runner.sqlmap import SqlmapRunner
 from api.v1.Penetration.runner.dirscan import DirScanRunner
@@ -12,6 +13,7 @@ from api.v1.Penetration.runner.hydra import HydraRunner
 from api.v1.Penetration.runner.subfinder import SubfinderRunner
 from api.v1.Penetration.runner.theharvester import TheHarvesterRunner
 from api.v1.Penetration.runner.trufflehog import TrufflehogRunner
+from api.v1.Penetration.runner.wafw00f import Wafw00fRunner
 from api.v1.Penetration.runner.whatweb import WhatWebRunner
 
 
@@ -122,6 +124,28 @@ class ToolDispatcher:
             findings = runner.run_scan(target_url=args.get("target_url", ""))
             summary = f"WhatWeb 指纹识别完成，探测到 {len(findings[0].get('plugins', {})) if findings else 0} 项技术特征。"
 
+
+        elif tool_id == "wafw00f":
+            runner = Wafw00fRunner(task_id)
+            findings = runner.run_scan(target_url=args.get("target_url", ""))
+
+            # 提取检测到的 WAF 名称用于生成摘要
+            detected_wafs = [f.get("firewall") for f in findings if f.get("detected")]
+            waf_status = ", ".join(detected_wafs) if detected_wafs else "未检测到 WAF"
+
+            summary = f"Wafw00f 探测完成，目标 WAF 状态: {waf_status}。"
+
+
+        elif tool_id == "arjun":
+            runner = ArjunRunner(task_id)
+            findings = runner.run_scan(target_url=args.get("target_url", ""))
+            summary = f"Arjun 参数爆破完成，发现 {len(findings)} 个隐藏参数。"
+
+        elif tool_id == "paramspider":
+            runner = ParamSpiderRunner(task_id)
+            # ParamSpiderRunner 已重写为无需第三方库的原生代码
+            findings = runner.run_scan(target_domain=args.get("target_domain", ""))
+            summary = f"ParamSpider 运行完成，捕获 {len(findings)} 个带参 URL。"
 
         else:
             raise ValueError(f"未注册的 tool_id: {tool_id}")

@@ -5,13 +5,13 @@ from .base import BaseRunner
 
 
 class OneForAllRunner(BaseRunner):
-    """独立 OneForAll 执行器"""
+    """独立 oneforall 执行器"""
 
     def run_scan(self, target_domain: str) -> List[Dict[str, Any]]:
         if not target_domain:
             return []
 
-        self.write_log("tool_oneforall", f"启动 OneForAll，目标: {target_domain}")
+        self.write_log("tool_oneforall", f"启动 oneforall，目标: {target_domain}")
 
         script_path = os.path.abspath(os.path.join(os.getcwd(), "oneforall", "oneforall.py"))
         if not os.path.exists(script_path):
