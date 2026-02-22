@@ -1,31 +1,28 @@
 import io
 import zipfile
-from typing import Optional, Dict, Any
+from typing import Optional
 
 from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import Response
 
-from api.v1.Penetration.runner.httpx import HttpxRunner
-from api.v1.Penetration.runner.nmap import NmapRunner
-from api.v1.Penetration.runner.tool_dispatcher import ToolDispatcher
 from api.v1.tasks.schema import (
-    TaskCreateRequest, TaskRunRequest,
-    TaskApproveRequest, UnifiedToolResponse, UnifiedToolRequest
+    TaskCreateRequest, TaskRunRequest, TaskStopRequest,
+    TaskApproveRequest
 )
 from api.v1.tasks.service import task_service
 
 # 配置
-API_KEY = "test-key"  # 你可以随便改；Dify 里要填同样的值
+API_KEY = "test-key"  # Dify / 前端需要填同样的值（用于工具/任务接口鉴权）
 
 # 创建FastAPI应用
 taskRouter = APIRouter(
     prefix="/task",
-    tags=["任务管理"],
+    tags=["任务管理（生命周期）"],
 )
 
 penetrationRouter = APIRouter(
     prefix="/penetration",
-    tags=["渗透测试工作流"],
+    tags=["渗透测试工作流（工具接口供 Dify 调用）"],
 )
 
 
@@ -38,6 +35,14 @@ def require_key(x_api_key: Optional[str]):
         )
 
 
+def ok(msg: str, data=None):
+    return {"success": True, "msg": msg, "data": data}
+
+
+def fail(msg: str, data=None):
+    return {"success": False, "msg": msg, "data": data}
+
+
 @taskRouter.post("/create")
 def create_task(
         req: TaskCreateRequest,
@@ -45,12 +50,9 @@ def create_task(
 ):
     """创建任务"""
     require_key(x_api_key)
-
-    # 解析budget
     budget_obj = task_service.parse_budget(req.budget)
-
-    # 创建任务
-    return task_service.create_task(req.target, req.base_url, budget_obj)
+    data = task_service.create_task(req.target, req.base_url, budget_obj)
+    return ok("created", data)
 
 
 @taskRouter.post("/run")
@@ -58,9 +60,10 @@ def run_task(
         req: TaskRunRequest,
         x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
 ):
-    """运行任务"""
+    """运行任务（转发到 app 的 run_by_task_id）"""
     require_key(x_api_key)
-    return task_service.run_task(req.task_id)
+    data = task_service.run_task(req.task_id)
+    return ok("running", data)
 
 
 @taskRouter.get("/status")
@@ -68,9 +71,21 @@ def task_status(
         task_id: str,
         x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
 ):
-    """获取任务状态"""
+    """获取任务状态（真实查询 Dify workflow_run）"""
     require_key(x_api_key)
-    return task_service.get_status(task_id)
+    data = task_service.get_status(task_id)
+    return ok("ok", data)
+
+
+@taskRouter.post("/stop")
+def stop_task(
+        req: TaskStopRequest,
+        x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
+):
+    """停止任务（停止 Dify workflow task）"""
+    require_key(x_api_key)
+    data = task_service.stop_task(req.task_id)
+    return ok("stopping", data)
 
 
 @taskRouter.post("/approve")
@@ -80,12 +95,8 @@ def approve_task(
 ):
     """审批任务"""
     require_key(x_api_key)
-    return task_service.approve_task(
-        req.task_id,
-        req.action,
-        req.approver,
-        req.remark
-    )
+    data = task_service.approve_task(req.task_id, req.action, req.approver, req.remark)
+    return ok("ok", data)
 
 
 @taskRouter.get("/artifacts/list")
@@ -95,7 +106,8 @@ def list_artifacts(
 ):
     """列出制品"""
     require_key(x_api_key)
-    return task_service.list_artifacts(task_id)
+    data = task_service.list_artifacts(task_id)
+    return ok("ok", data)
 
 
 @taskRouter.get("/artifacts/download")
@@ -104,13 +116,12 @@ def download(
         path: str,
         x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
 ):
-    """下载制品"""
+    """下载制品（保持原来的 mock 下载行为不变）"""
     require_key(x_api_key)
 
     # 验证任务存在
     task_service.get_status(task_id)  # 会抛出404如果不存在
 
-    # 返回一个zip文件
     mem = io.BytesIO()
     with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("README.txt", f"Mock download for {task_id}\nPath: {path}\n")
@@ -120,24 +131,15 @@ def download(
     return Response(content=mem.read(), media_type="application/zip")
 
 
-@penetrationRouter.post("/tool/execute", response_model=UnifiedToolResponse)
-def execute_unified_tool(
-        req: UnifiedToolRequest,
-        x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
-):
-    """
-    统一工具执行入口。
-    Dify Planner 仅需调用此单一接口，通过 tool_id 调度具体工具。
-    """
-    require_key(x_api_key)
+from api.v1.Penetration.runner.httpx import HttpxRunner
+from api.v1.Penetration.runner.nmap import NmapRunner
+from api.v1.Penetration.runner.crawler import CrawlerRunner
+from api.v1.Penetration.runner.candidate import CandidateRunner
+from api.v1.Penetration.runner.validator import ValidatorRunner
+from api.v1.Penetration.reporter import ReporterRunner
 
-    try:
-        result = ToolDispatcher.execute(req.task_id, req.tool_id, req.args)
-        return UnifiedToolResponse(ok=True, **result)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"工具执行异常: {str(e)}")
+
+# 可选的其他端点
 
 @penetrationRouter.post("/scan/nmap")
 def scan_nmap(

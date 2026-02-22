@@ -20,6 +20,11 @@ class TaskRunRequest(BaseModel):
     task_id: str
 
 
+class TaskStopRequest(BaseModel):
+    """停止任务请求"""
+    task_id: str
+
+
 class TaskApproveRequest(BaseModel):
     """审批任务请求"""
     task_id: str
