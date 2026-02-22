@@ -37,13 +37,9 @@ wafw00f：WAF（Web 应用防火墙）探测工具（在执行重型扫描前调
 
 katana：(已集成) 无头浏览器深度 Web 爬虫。
 
-hakrawler：快速提取 Web 页面中的 JavaScript 文件和端点。
-
 paramspider：专注于寻找带有参数的 URL（为 SQLMap 和 XSS 扫描准备弹药）。
 
 arjun：隐藏 HTTP 参数爆破工具（发现 API 中未公开的 ?debug=1 等参数）。
-
-kiterunner：针对 REST API 和 GraphQL 的路由爆破工具。
 
 模块四：目录爆破与敏感信息泄露 (Content Discovery)
 寻找未直接链接的隐藏资产。
