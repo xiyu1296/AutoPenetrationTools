@@ -242,6 +242,27 @@ class TaskService:
         if not task:
             raise HTTPException(404, "task_id not found")
 
+        # ===== 新增：读取 endpoints.json 统计端点数量 =====
+        endpoints_count = 0
+        crawler_name = "unknown"
+        timebox = False
+        partial = False
+
+        endpoints_path = f"runs/{task_id}/endpoints.json"
+        if os.path.exists(endpoints_path):
+            try:
+                with open(endpoints_path, 'r', encoding='utf-8') as f:
+                    endpoints_data = json.load(f)
+                    # 根据实际格式：{"task_id": "xxx", "endpoints": [...]}
+                    endpoints_count = len(endpoints_data.get("endpoints", []))
+                    # 如果以后有 crawler 字段可以加上，没有就用默认
+                    crawler_name = endpoints_data.get("crawler", "unknown")
+                    timebox = endpoints_data.get("timebox", False)
+                    partial = endpoints_data.get("partial", False)
+            except Exception as e:
+                print(f"读取 endpoints.json 失败: {e}")
+        # =============================================
+
         dify_run = _load_json(f"runs/{task_id}/dify_run.json") or {}
         workflow_run_id = dify_run.get("workflow_run_id")
 
@@ -254,6 +275,14 @@ class TaskService:
                 "progress": {"percent": task.percent, "hint": task.hint},
                 "blocked": task.blocked,
                 "updated_at": task.updated_at,
+                "metrics": {  # 新增
+                    "endpoints": endpoints_count,
+                    "crawler": crawler_name
+                },
+                "flags": {  # 新增
+                    "timebox": timebox,
+                    "partial": partial
+                },
                 "dify": {"workflow_run_id": None, "status": None, "outputs": None, "error": None},
             }
 
@@ -294,6 +323,14 @@ class TaskService:
             "progress": {"percent": task.percent, "hint": task.hint},
             "blocked": task.blocked,
             "updated_at": task.updated_at,
+            "metrics": {  # 新增
+                "endpoints": endpoints_count,
+                "crawler": crawler_name
+            },
+            "flags": {  # 新增
+                "timebox": timebox,
+                "partial": partial
+            },
             "dify": {
                 "workflow_run_id": workflow_run_id,
                 "workflow_id": detail.get("workflow_id"),
