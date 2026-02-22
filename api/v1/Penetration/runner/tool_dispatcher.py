@@ -1,6 +1,8 @@
 from api.v1.Penetration.runner.amass import AmassRunner
 from api.v1.Penetration.runner.dnsx import DnsxRunner
 from api.v1.Penetration.runner.gun import GauRunner
+from api.v1.Penetration.runner.masscan import MasscanRunner
+from api.v1.Penetration.runner.naabu import NaabuRunner
 from api.v1.Penetration.runner.nuclei import NucleiRunner
 from api.v1.Penetration.runner.oneforall import OneForAllRunner
 from api.v1.Penetration.runner.shodan import ShodanRunner
@@ -10,6 +12,7 @@ from api.v1.Penetration.runner.hydra import HydraRunner
 from api.v1.Penetration.runner.subfinder import SubfinderRunner
 from api.v1.Penetration.runner.theharvester import TheHarvesterRunner
 from api.v1.Penetration.runner.trufflehog import TrufflehogRunner
+from api.v1.Penetration.runner.whatweb import WhatWebRunner
 
 
 class ToolDispatcher:
@@ -99,6 +102,26 @@ class ToolDispatcher:
             res = runner.run_scan(target_ip=args.get("target_ip", ""))
             findings = [res] if res else []
             summary = f"Shodan 检索完成，目标系统: {res.get('os', 'Unknown')}，开放端口: {res.get('ports', [])}。"
+
+        elif tool_id == "masscan":
+            runner = MasscanRunner(task_id)
+            findings = runner.run_scan(
+                target_ip=args.get("target_ip", ""),
+                ports=args.get("ports", "1-65535"),
+                rate=args.get("rate", 1000)
+            )
+            summary = f"Masscan 扫描完成，发现 {len(findings)} 个开放端口。"
+
+        elif tool_id == "naabu":
+            runner = NaabuRunner(task_id)
+            findings = runner.run_scan(target=args.get("target", ""))
+            summary = f"Naabu 扫描完成，确认 {len(findings)} 个存活端口。"
+
+        elif tool_id == "whatweb":
+            runner = WhatWebRunner(task_id)
+            findings = runner.run_scan(target_url=args.get("target_url", ""))
+            summary = f"WhatWeb 指纹识别完成，探测到 {len(findings[0].get('plugins', {})) if findings else 0} 项技术特征。"
+
 
         else:
             raise ValueError(f"未注册的 tool_id: {tool_id}")
