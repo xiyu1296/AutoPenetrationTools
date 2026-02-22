@@ -5,9 +5,10 @@ from typing import Optional
 from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import Response
 
+from api.v1.Penetration.runner.tool_dispatcher import ToolDispatcher
 from api.v1.tasks.schema import (
     TaskCreateRequest, TaskRunRequest, TaskStopRequest,
-    TaskApproveRequest
+    TaskApproveRequest, UnifiedToolResponse, UnifiedToolRequest
 )
 from api.v1.tasks.service import task_service
 
@@ -287,3 +288,23 @@ def tool_hydra_bruteforce(
         is_cracked=result.get("is_cracked", False),
         findings=findings_objs
     )
+
+
+@penetrationRouter.post("/tool/execute", response_model=UnifiedToolResponse)
+def execute_unified_tool(
+        req: UnifiedToolRequest,
+        x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
+):
+    """
+    统一工具执行入口。
+    Dify Planner 仅需调用此单一接口，通过 tool_id 调度具体工具。
+    """
+    require_key(x_api_key)
+
+    try:
+        result = ToolDispatcher.execute(req.task_id, req.tool_id, req.args)
+        return UnifiedToolResponse(ok=True, **result)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"工具执行异常: {str(e)}")
