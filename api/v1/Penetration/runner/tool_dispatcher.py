@@ -1,7 +1,14 @@
+from api.v1.Penetration.runner.amass import AmassRunner
+from api.v1.Penetration.runner.dnsx import DnsxRunner
+from api.v1.Penetration.runner.gun import GauRunner
 from api.v1.Penetration.runner.nuclei import NucleiRunner
+from api.v1.Penetration.runner.oneforall import OneForAllRunner
 from api.v1.Penetration.runner.sqlmap import SqlmapRunner
 from api.v1.Penetration.runner.dirscan import DirScanRunner
 from api.v1.Penetration.runner.hydra import HydraRunner
+from api.v1.Penetration.runner.subfinder import SubfinderRunner
+from api.v1.Penetration.runner.theharvester import TheHarvesterRunner
+
 
 class ToolDispatcher:
     @staticmethod
@@ -44,6 +51,41 @@ class ToolDispatcher:
             )
             findings = res.get("findings", [])
             summary = f"Hydra 爆破完成，破解状态: {res.get('is_cracked')}。"
+
+        elif tool_id == "subfinder":
+            runner = SubfinderRunner(task_id)
+            findings = runner.run_scan(target_domain=args.get("target_domain", ""))
+            summary = f"Subfinder 枚举完成，发现 {len(findings)} 个子域名。"
+
+        elif tool_id == "amass":
+            runner = AmassRunner(task_id)
+            findings = runner.run_scan(target_domain=args.get("target_domain", ""))
+            summary = f"Amass 被动测绘完成，发现 {len(findings)} 个相关资产。"
+
+        elif tool_id == "dnsx":
+            runner = DnsxRunner(task_id)
+            findings = runner.run_scan(subdomains=args.get("subdomains", []))
+            summary = f"Dnsx 存活解析完成，确认存活 {len(findings)} 个记录。"
+
+        elif tool_id == "oneforall":
+            runner = OneForAllRunner(task_id)
+            findings = runner.run_scan(target_domain=args.get("target_domain", ""))
+            summary = f"OneForAll 扫描完成，发现 {len(findings)} 个子域名。"
+
+        elif tool_id == "gau":
+            runner = GauRunner(task_id)
+            findings = runner.run_scan(target_domain=args.get("target_domain", ""))
+            summary = f"Gau 历史 URL 提取完成，发现 {len(findings)} 条记录。"
+
+        elif tool_id == "theharvester":
+            runner = TheHarvesterRunner(task_id)
+            res = runner.run_scan(
+                target_domain=args.get("target_domain", ""),
+                source=args.get("source", "all")
+            )
+            # 展平封装格式以符合 UnifiedToolResponse
+            findings = [res]
+            summary = f"theHarvester 收集完成，提取 {len(res.get('emails', []))} 个邮箱及 {len(res.get('hosts', []))} 个主机。"
 
         else:
             raise ValueError(f"未注册的 tool_id: {tool_id}")
