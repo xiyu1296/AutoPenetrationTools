@@ -52,6 +52,21 @@ class ArtifactListResponse(BaseModel):
     artifacts: List[ArtifactInfo]
 
 
+from typing import Dict, Any, List
+
+class UnifiedToolRequest(BaseModel):
+    """统一工具调用请求"""
+    task_id: str
+    tool_id: str               # 例如 "nuclei", "sqlmap"
+    args: Dict[str, Any]       # 动态参数字典
+
+class UnifiedToolResponse(BaseModel):
+    """统一工具调用响应"""
+    ok: bool
+    tool_id: str
+    summary: str               # 执行结果摘要
+    findings: List[Dict[str, Any]] # 统一格式的漏洞/发现列表
+
 class ToolNucleiRequest(BaseModel):
     """Nuclei 工具调用请求"""
     task_id: str
